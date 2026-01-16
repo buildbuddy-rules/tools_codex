@@ -1,0 +1,5 @@
+# Enable bzlmod by default
+common --enable_bzlmod
+
+# Pass through OPENAI_API_KEY for Codex actions
+build --action_env=OPENAI_API_KEY

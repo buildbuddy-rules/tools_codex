@@ -1,0 +1,16 @@
+"""Bazel toolchain for Codex - OpenAI's AI coding CLI."""
+
+module(
+    name = "tools_codex",
+    version = "0.1.0",
+)
+
+bazel_dep(name = "platforms", version = "0.0.10")
+
+# Set up the Codex CLI binary (uses default version)
+codex = use_extension("//codex:codex.bzl", "codex")
+codex.download()
+use_repo(codex, "codex_toolchains")
+
+# Register toolchains for all platforms
+register_toolchains("@codex_toolchains//:all")

@@ -1,0 +1,138 @@
+"""Repository rule for downloading the Codex CLI binary."""
+
+_CODEX_VERSION = "rust-v0.85.0"
+_CODEX_BASE_URL = "https://github.com/openai/codex/releases/download/{version}"
+
+_PLATFORMS = {
+    "darwin_arm64": {
+        "filename": "codex-aarch64-apple-darwin.zst",
+        "binary": "codex",
+    },
+    "darwin_amd64": {
+        "filename": "codex-x86_64-apple-darwin.zst",
+        "binary": "codex",
+    },
+    "linux_arm64": {
+        "filename": "codex-aarch64-unknown-linux-musl.zst",
+        "binary": "codex",
+    },
+    "linux_amd64": {
+        "filename": "codex-x86_64-unknown-linux-musl.zst",
+        "binary": "codex",
+    },
+    "windows_arm64": {
+        "filename": "codex-aarch64-pc-windows-msvc.exe.zst",
+        "binary": "codex.exe",
+    },
+    "windows_amd64": {
+        "filename": "codex-x86_64-pc-windows-msvc.exe.zst",
+        "binary": "codex.exe",
+    },
+}
+
+def _get_platform(repository_ctx):
+    """Determine the current platform."""
+    os_name = repository_ctx.os.name.lower()
+    arch = repository_ctx.os.arch
+
+    if "mac" in os_name or "darwin" in os_name:
+        os_key = "darwin"
+    elif "linux" in os_name:
+        os_key = "linux"
+    elif "win" in os_name:
+        os_key = "windows"
+    else:
+        fail("Unsupported operating system: {}".format(os_name))
+
+    if arch == "aarch64" or arch == "arm64":
+        arch_key = "arm64"
+    elif arch == "x86_64" or arch == "amd64":
+        arch_key = "amd64"
+    else:
+        fail("Unsupported architecture: {}".format(arch))
+
+    return "{}_{}".format(os_key, arch_key)
+
+def _codex_toolchains_impl(repository_ctx):
+    """Download and extract the Codex binary for the specified or current platform."""
+    version = repository_ctx.attr.version
+    if not version:
+        version = _CODEX_VERSION
+
+    # Use specified platform or detect current
+    platform = repository_ctx.attr.platform
+    if not platform:
+        platform = _get_platform(repository_ctx)
+
+    if platform not in _PLATFORMS:
+        fail("Unsupported platform: {}".format(platform))
+
+    platform_info = _PLATFORMS[platform]
+    filename = platform_info["filename"]
+    binary = platform_info["binary"]
+
+    url = "{}/{}".format(
+        _CODEX_BASE_URL.format(version = version),
+        filename,
+    )
+
+    repository_ctx.report_progress("Downloading Codex {} for {}".format(version, platform))
+
+    # Download the .zst file and decompress
+    repository_ctx.download(
+        url = url,
+        output = filename,
+    )
+
+    # Decompress with zstd directly to final name
+    if "windows" in platform:
+        binary_name = "codex.exe"
+    else:
+        binary_name = "codex"
+
+    repository_ctx.execute(["zstd", "-d", filename, "-o", binary_name])
+    repository_ctx.delete(filename)
+
+    # Make executable on Unix
+    if "windows" not in platform:
+        repository_ctx.execute(["chmod", "+x", binary_name])
+
+    # Write version file for reference
+    repository_ctx.file("VERSION", version)
+
+    # Create BUILD file - always export as "codex" for consistent referencing
+    if "windows" in platform:
+        build_content = '''
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["codex.exe"])
+
+# Alias for consistent cross-platform referencing
+alias(
+    name = "codex",
+    actual = "codex.exe",
+)
+'''
+    else:
+        build_content = '''
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["codex"])
+'''
+
+    repository_ctx.file("BUILD.bazel", content = build_content)
+
+codex_toolchains = repository_rule(
+    implementation = _codex_toolchains_impl,
+    attrs = {
+        "version": attr.string(
+            doc = "Version to download. If empty, uses default version.",
+        ),
+        "platform": attr.string(
+            doc = "Platform to download for (e.g., 'darwin_arm64'). If empty, detects current platform.",
+        ),
+    },
+    doc = "Downloads the Codex CLI binary for the specified platform.",
+)
+
+CODEX_DEFAULT_VERSION = _CODEX_VERSION
