@@ -9,12 +9,16 @@ CodexInfo = provider(
 
 def _codex_toolchain_impl(ctx):
     """Implementation of the Codex toolchain."""
+    default_info = DefaultInfo(files = depset([ctx.file.codex]))
     toolchain_info = platform_common.ToolchainInfo(
         codex_info = CodexInfo(
             binary = ctx.file.codex,
         ),
     )
-    return [toolchain_info]
+    template_variable_info = platform_common.TemplateVariableInfo({
+        "CODEX_BINARY": ctx.file.codex.path,
+    })
+    return [default_info, toolchain_info, template_variable_info]
 
 codex_toolchain = rule(
     implementation = _codex_toolchain_impl,

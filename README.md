@@ -52,6 +52,24 @@ my_rule = rule(
 )
 ```
 
+### In genrule
+
+Use the toolchain in a genrule via `toolchains` and make variable expansion:
+
+```starlark
+load("@tools_codex//codex:defs.bzl", "CODEX_TOOLCHAIN_TYPE")
+
+genrule(
+    name = "my_genrule",
+    srcs = ["input.txt"],
+    outs = ["output.txt"],
+    cmd = "$(CODEX_BINARY) --quiet 'Summarize this file: $(location input.txt)' > $@",
+    toolchains = [CODEX_TOOLCHAIN_TYPE],
+)
+```
+
+The `$(CODEX_BINARY)` make variable expands to the path of the Codex binary.
+
 ### Public API
 
 From `@tools_codex//codex:defs.bzl`:
