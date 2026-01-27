@@ -39,15 +39,27 @@ def _my_rule_impl(ctx):
     toolchain = ctx.toolchains[CODEX_TOOLCHAIN_TYPE]
     codex_binary = toolchain.codex_info.binary
 
-    # Use codex_binary in your actions
+    out = ctx.actions.declare_file(ctx.label.name + ".md")
     ctx.actions.run(
         executable = codex_binary,
-        arguments = ["--help"],
-        # ...
+        arguments = [
+            "exec",
+            "--skip-git-repo-check",
+            "--yolo",
+            "Read {} and write API documentation to {}".format(ctx.file.src.path, out.path),
+        ],
+        inputs = [ctx.file.src],
+        outputs = [out],
+        env = {"HOME": ".home"},
+        use_default_shell_env = True,
     )
+    return [DefaultInfo(files = depset([out]))]
 
 my_rule = rule(
     implementation = _my_rule_impl,
+    attrs = {
+        "src": attr.label(allow_single_file = True, mandatory = True),
+    },
     toolchains = [CODEX_TOOLCHAIN_TYPE],
 )
 ```
@@ -61,14 +73,19 @@ load("@tools_codex//codex:defs.bzl", "CODEX_TOOLCHAIN_TYPE")
 
 genrule(
     name = "my_genrule",
-    srcs = ["input.txt"],
-    outs = ["output.txt"],
-    cmd = "$(CODEX_BINARY) --quiet 'Summarize this file: $(location input.txt)' > $@",
+    srcs = ["input.py"],
+    outs = ["output.md"],
+    cmd = """
+        export HOME=.home
+        $(CODEX_BINARY) exec --skip-git-repo-check --yolo 'Read $(location input.py) and write API documentation to $@'
+    """,
     toolchains = [CODEX_TOOLCHAIN_TYPE],
 )
 ```
 
 The `$(CODEX_BINARY)` make variable expands to the path of the Codex binary.
+
+**Note:** The `export HOME=.home` line is required because Bazel runs genrules in a sandbox where the real home directory is not writable. Codex writes session files to `$HOME`, so redirecting it to a writable location within the sandbox prevents permission errors. The `--skip-git-repo-check` flag is needed since the sandbox is not a git repository, and `--yolo` allows Codex to read and write files without restrictions.
 
 ### Public API
 
@@ -89,8 +106,40 @@ From `@tools_codex//codex:defs.bzl`:
 - `windows_arm64`
 - `windows_amd64`
 
+## Authentication
+
+Codex requires a `CODEX_API_KEY` to function. Since Bazel runs actions in a sandbox, you need to explicitly pass the API key through using `--action_env`.
+
+### Option 1: Pass from environment
+
+To pass the API key from your shell environment, add to your `.bazelrc`:
+
+```
+common --action_env=CODEX_API_KEY
+```
+
+Then ensure `CODEX_API_KEY` is set in your shell before running Bazel.
+
+### Option 2: Hardcode in user.bazelrc
+
+For convenience, you can hardcode the API key in a `user.bazelrc` file that is gitignored:
+
+1. Add `user.bazelrc` to your `.gitignore`:
+   ```
+   echo "user.bazelrc" >> .gitignore
+   ```
+
+2. Create a `.bazelrc` that imports `user.bazelrc`:
+   ```
+   echo "try-import %workspace%/user.bazelrc" >> .bazelrc
+   ```
+
+3. Create `user.bazelrc` with your API key:
+   ```
+   common --action_env=CODEX_API_KEY=sk-...
+   ```
+
 ## Requirements
 
 - Bazel 7.0+ with bzlmod enabled
 - `zstd` command available (for decompressing the binary)
-- `OPENAI_API_KEY` environment variable for Codex to function
