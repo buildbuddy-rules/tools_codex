@@ -4,40 +4,14 @@ Bazel toolchain for [Codex](https://github.com/openai/codex) - OpenAI's AI codin
 
 ## Setup
 
-### Using BuildBuddy Registry (Recommended)
-
-Add the BuildBuddy registry to your `.bazelrc`:
-
-```
-common --registry=https://registry.buildbuddy.io/
-```
-
-Then add the dependency to your `MODULE.bazel`:
-
-```starlark
-bazel_dep(name = "tools_codex", version = "main-github.buildbuddy-rules")
-```
-
-To pin to a specific tag or commit, replace `main` with the tag or commit SHA:
-
-```starlark
-# Pin to a tag
-bazel_dep(name = "tools_codex", version = "v0.1.0-github.buildbuddy-rules")
-
-# Pin to a specific commit
-bazel_dep(name = "tools_codex", version = "abc1234-github.buildbuddy-rules")
-```
-
-### Using git_override
-
-Alternatively, use `git_override` directly in your `MODULE.bazel`:
+Add the dependency to your `MODULE.bazel` using `git_override`:
 
 ```starlark
 bazel_dep(name = "tools_codex", version = "0.1.0")
 git_override(
     module_name = "tools_codex",
     remote = "https://github.com/buildbuddy-rules/tools_codex.git",
-    commit = "<commit_sha>",  # Replace with the desired commit
+    commit = "0dec5645a2e14d80bbd6a7a2e8211a8c6923e023",
 )
 ```
 
