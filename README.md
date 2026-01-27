@@ -28,6 +28,29 @@ codex.download(version = "rust-v0.85.0")
 
 ## Usage
 
+### In genrule
+
+Use the toolchain in a genrule via `toolchains` and make variable expansion:
+
+```starlark
+load("@tools_codex//codex:defs.bzl", "CODEX_TOOLCHAIN_TYPE")
+
+genrule(
+    name = "my_genrule",
+    srcs = ["input.py"],
+    outs = ["output.md"],
+    cmd = """
+        export HOME=.home
+        $(CODEX_BINARY) exec --skip-git-repo-check --yolo 'Read $(location input.py) and write API documentation to $@'
+    """,
+    toolchains = [CODEX_TOOLCHAIN_TYPE],
+)
+```
+
+The `$(CODEX_BINARY)` make variable expands to the path of the Codex binary.
+
+**Note:** The `export HOME=.home` line is required because Bazel runs genrules in a sandbox where the real home directory is not writable. Codex writes session files to `$HOME`, so redirecting it to a writable location within the sandbox prevents permission errors. The `--skip-git-repo-check` flag is needed since the sandbox is not a git repository, and `--yolo` allows Codex to read and write files without restrictions.
+
 ### In custom rules
 
 Use the toolchain in your rule implementation:
@@ -63,29 +86,6 @@ my_rule = rule(
     toolchains = [CODEX_TOOLCHAIN_TYPE],
 )
 ```
-
-### In genrule
-
-Use the toolchain in a genrule via `toolchains` and make variable expansion:
-
-```starlark
-load("@tools_codex//codex:defs.bzl", "CODEX_TOOLCHAIN_TYPE")
-
-genrule(
-    name = "my_genrule",
-    srcs = ["input.py"],
-    outs = ["output.md"],
-    cmd = """
-        export HOME=.home
-        $(CODEX_BINARY) exec --skip-git-repo-check --yolo 'Read $(location input.py) and write API documentation to $@'
-    """,
-    toolchains = [CODEX_TOOLCHAIN_TYPE],
-)
-```
-
-The `$(CODEX_BINARY)` make variable expands to the path of the Codex binary.
-
-**Note:** The `export HOME=.home` line is required because Bazel runs genrules in a sandbox where the real home directory is not writable. Codex writes session files to `$HOME`, so redirecting it to a writable location within the sandbox prevents permission errors. The `--skip-git-repo-check` flag is needed since the sandbox is not a git repository, and `--yolo` allows Codex to read and write files without restrictions.
 
 ### Public API
 
