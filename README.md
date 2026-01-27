@@ -41,7 +41,8 @@ genrule(
     outs = ["output.md"],
     cmd = """
         export HOME=.home
-        $(CODEX_BINARY) exec --skip-git-repo-check --yolo 'Read $(location input.py) and write API documentation to $@'
+        $(CODEX_BINARY) exec --skip-git-repo-check --yolo \
+            'Read $(location input.py) and write API documentation to $@'
     """,
     toolchains = [CODEX_TOOLCHAIN_TYPE],
 )
