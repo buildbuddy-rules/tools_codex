@@ -6,26 +6,32 @@ _CODEX_BASE_URL = "https://github.com/openai/codex/releases/download/{version}"
 _PLATFORMS = {
     "darwin_arm64": {
         "filename": "codex-aarch64-apple-darwin.tar.gz",
+        "extracted": "codex-aarch64-apple-darwin",
         "binary": "codex",
     },
     "darwin_amd64": {
         "filename": "codex-x86_64-apple-darwin.tar.gz",
+        "extracted": "codex-x86_64-apple-darwin",
         "binary": "codex",
     },
     "linux_arm64": {
         "filename": "codex-aarch64-unknown-linux-musl.tar.gz",
+        "extracted": "codex-aarch64-unknown-linux-musl",
         "binary": "codex",
     },
     "linux_amd64": {
         "filename": "codex-x86_64-unknown-linux-musl.tar.gz",
+        "extracted": "codex-x86_64-unknown-linux-musl",
         "binary": "codex",
     },
     "windows_arm64": {
         "filename": "codex-aarch64-pc-windows-msvc.tar.gz",
+        "extracted": "codex-aarch64-pc-windows-msvc.exe",
         "binary": "codex.exe",
     },
     "windows_amd64": {
         "filename": "codex-x86_64-pc-windows-msvc.tar.gz",
+        "extracted": "codex-x86_64-pc-windows-msvc.exe",
         "binary": "codex.exe",
     },
 }
@@ -69,6 +75,7 @@ def _codex_toolchains_impl(repository_ctx):
 
     platform_info = _PLATFORMS[platform]
     filename = platform_info["filename"]
+    extracted = platform_info["extracted"]
     binary = platform_info["binary"]
 
     url = "{}/{}".format(
@@ -81,8 +88,14 @@ def _codex_toolchains_impl(repository_ctx):
     # Download and extract the .tar.gz file
     repository_ctx.download_and_extract(
         url = url,
-        stripPrefix = "",
     )
+
+    # Rename extracted binary to expected name
+    repository_ctx.execute(["mv", extracted, binary])
+
+    # Make executable on Unix
+    if "windows" not in platform:
+        repository_ctx.execute(["chmod", "+x", binary])
 
     # Write version file for reference
     repository_ctx.file("VERSION", version)
