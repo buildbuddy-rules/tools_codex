@@ -5,27 +5,27 @@ _CODEX_BASE_URL = "https://github.com/openai/codex/releases/download/{version}"
 
 _PLATFORMS = {
     "darwin_arm64": {
-        "filename": "codex-aarch64-apple-darwin.zst",
+        "filename": "codex-aarch64-apple-darwin.tar.gz",
         "binary": "codex",
     },
     "darwin_amd64": {
-        "filename": "codex-x86_64-apple-darwin.zst",
+        "filename": "codex-x86_64-apple-darwin.tar.gz",
         "binary": "codex",
     },
     "linux_arm64": {
-        "filename": "codex-aarch64-unknown-linux-musl.zst",
+        "filename": "codex-aarch64-unknown-linux-musl.tar.gz",
         "binary": "codex",
     },
     "linux_amd64": {
-        "filename": "codex-x86_64-unknown-linux-musl.zst",
+        "filename": "codex-x86_64-unknown-linux-musl.tar.gz",
         "binary": "codex",
     },
     "windows_arm64": {
-        "filename": "codex-aarch64-pc-windows-msvc.exe.zst",
+        "filename": "codex-aarch64-pc-windows-msvc.tar.gz",
         "binary": "codex.exe",
     },
     "windows_amd64": {
-        "filename": "codex-x86_64-pc-windows-msvc.exe.zst",
+        "filename": "codex-x86_64-pc-windows-msvc.tar.gz",
         "binary": "codex.exe",
     },
 }
@@ -78,24 +78,11 @@ def _codex_toolchains_impl(repository_ctx):
 
     repository_ctx.report_progress("Downloading Codex {} for {}".format(version, platform))
 
-    # Download the .zst file and decompress
-    repository_ctx.download(
+    # Download and extract the .tar.gz file
+    repository_ctx.download_and_extract(
         url = url,
-        output = filename,
+        stripPrefix = "",
     )
-
-    # Decompress with zstd directly to final name
-    if "windows" in platform:
-        binary_name = "codex.exe"
-    else:
-        binary_name = "codex"
-
-    repository_ctx.execute(["zstd", "-d", filename, "-o", binary_name])
-    repository_ctx.delete(filename)
-
-    # Make executable on Unix
-    if "windows" not in platform:
-        repository_ctx.execute(["chmod", "+x", binary_name])
 
     # Write version file for reference
     repository_ctx.file("VERSION", version)

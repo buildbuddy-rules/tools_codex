@@ -143,4 +143,3 @@ For convenience, you can hardcode the API key in a `user.bazelrc` file that is g
 ## Requirements
 
 - Bazel 7.0+ with bzlmod enabled
-- `zstd` command available (for decompressing the binary)
