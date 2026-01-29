@@ -74,14 +74,20 @@ _codex_toolchains_repo = repository_rule(
 def _codex_impl(module_ctx):
     """Implementation of the codex module extension."""
     version = ""
+    sha256 = {}
+    use_latest = False
 
-    # Process download tags - use the first one's version
+    # Process download tags - use the first one's settings
     for mod in module_ctx.modules:
         for download in mod.tags.download:
             if download.version:
                 version = download.version
-                break
-        if version:
+            if download.sha256:
+                sha256 = download.sha256
+            if download.use_latest:
+                use_latest = download.use_latest
+            break
+        if version or use_latest:
             break
 
     # Download the Codex CLI binary for each platform
@@ -90,6 +96,8 @@ def _codex_impl(module_ctx):
             name = "codex_" + platform,
             version = version,
             platform = platform,
+            sha256 = sha256.get(platform, ""),
+            use_latest = use_latest,
         )
 
     # Create the toolchains repository
@@ -98,7 +106,14 @@ def _codex_impl(module_ctx):
 _download = tag_class(
     attrs = {
         "version": attr.string(
-            doc = "Version to download (e.g., 'rust-v0.85.0'). If empty, uses default version.",
+            doc = "Version to download (e.g., 'rust-v0.92.0'). If empty, uses default version.",
+        ),
+        "sha256": attr.string_dict(
+            doc = "SHA256 hashes per platform (e.g., {'darwin_arm64': 'abc...', 'linux_amd64': 'def...'}).",
+        ),
+        "use_latest": attr.bool(
+            default = False,
+            doc = "If true, fetches the latest version from GitHub releases instead of the default.",
         ),
     },
 )

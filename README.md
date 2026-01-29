@@ -15,7 +15,7 @@ git_override(
 )
 ```
 
-The toolchain is automatically registered. By default, it downloads version `rust-v0.85.0`.
+The toolchain is automatically registered. By default, it downloads version `rust-v0.92.0` with SHA256 verification for reproducible builds.
 
 ### Pinning a Codex version
 
@@ -23,7 +23,16 @@ To pin a specific Codex CLI version:
 
 ```starlark
 codex = use_extension("@tools_codex//codex:codex.bzl", "codex")
-codex.download(version = "rust-v0.85.0")
+codex.download(version = "rust-v0.90.0")
+```
+
+### Using the latest version
+
+To always fetch the latest version from GitHub releases:
+
+```starlark
+codex = use_extension("@tools_codex//codex:codex.bzl", "codex")
+codex.download(use_latest = True)
 ```
 
 ## Usage
