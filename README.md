@@ -1,8 +1,6 @@
 # tools_codex
 
-Bazel toolchain for [Codex](https://github.com/openai/codex) - OpenAI's AI coding CLI.
-
-If you want a Bazel ruleset that uses this toolchain, see [rules_codex](https://github.com/buildbuddy-rules/rules_codex).
+Hermetic, cross-platform Bazel toolchain for [Codex](https://github.com/openai/codex) - OpenAI's AI coding CLI. If you want a Bazel ruleset that uses this toolchain, see [rules_codex](https://github.com/buildbuddy-rules/rules_codex).
 
 ## Setup
 
