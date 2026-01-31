@@ -2,6 +2,8 @@
 
 Bazel toolchain for [Codex](https://github.com/openai/codex) - OpenAI's AI coding CLI.
 
+If you want a Bazel ruleset that uses this toolchain, see [rules_codex](https://github.com/buildbuddy-rules/rules_codex).
+
 ## Setup
 
 Add the dependency to your `MODULE.bazel` using `git_override`:
