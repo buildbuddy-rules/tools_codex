@@ -1,3 +1,5 @@
+![tools_codex](tools_codex.png)
+
 # tools_codex
 
 Hermetic, cross-platform Bazel toolchain for [Codex](https://github.com/openai/codex) - OpenAI's AI coding CLI. If you want a Bazel ruleset that uses this toolchain, see [rules_codex](https://github.com/buildbuddy-rules/rules_codex).
@@ -152,3 +154,7 @@ For convenience, you can hardcode the API key in a `user.bazelrc` file that is g
 ## Requirements
 
 - Bazel 7.0+ with bzlmod enabled
+
+## Acknowledgements
+
+Codex is a trademark of OpenAI.
