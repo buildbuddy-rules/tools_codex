@@ -99,13 +99,54 @@ my_rule = rule(
 )
 ```
 
+### In tests
+
+For tests that need to run the Codex binary at runtime, use the runtime toolchain type. This ensures the binary matches the target platform where the test executes:
+
+```starlark
+load("@tools_codex//codex:defs.bzl", "CODEX_RUNTIME_TOOLCHAIN_TYPE")
+
+def _codex_test_impl(ctx):
+    toolchain = ctx.toolchains[CODEX_RUNTIME_TOOLCHAIN_TYPE]
+    codex_binary = toolchain.codex_info.binary
+
+    test_script = ctx.actions.declare_file(ctx.label.name + ".sh")
+    ctx.actions.write(
+        output = test_script,
+        content = """#!/bin/bash
+export HOME="$TEST_TMPDIR"
+{codex} --version
+""".format(codex = codex_binary.short_path),
+        is_executable = True,
+    )
+    return [DefaultInfo(
+        executable = test_script,
+        runfiles = ctx.runfiles(files = [codex_binary]),
+    )]
+
+codex_test = rule(
+    implementation = _codex_test_impl,
+    test = True,
+    toolchains = [CODEX_RUNTIME_TOOLCHAIN_TYPE],
+)
+```
+
+### Toolchain types
+
+There are two toolchain types depending on your use case:
+
+- **`CODEX_TOOLCHAIN_TYPE`** - Use for build-time actions (genrules, custom rules). Selected based on the execution platform. Use this when Codex's output isn't platform-specific.
+
+- **`CODEX_RUNTIME_TOOLCHAIN_TYPE`** - Use for tests or run targets where the Codex binary executes on the target platform.
+
 ### Public API
 
 From `@tools_codex//codex:defs.bzl`:
 
 | Symbol | Description |
 |--------|-------------|
-| `CODEX_TOOLCHAIN_TYPE` | Toolchain type string for use in `toolchains` attribute |
+| `CODEX_TOOLCHAIN_TYPE` | Toolchain type for build actions (exec platform only) |
+| `CODEX_RUNTIME_TOOLCHAIN_TYPE` | Toolchain type for test/run (target platform) |
 | `CodexInfo` | Provider with `binary` field containing the Codex executable |
 | `codex_toolchain` | Rule for defining custom toolchain implementations |
 

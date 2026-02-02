@@ -40,11 +40,17 @@ toolchain(
     exec_compatible_with = [
         {exec_constraints},
     ],
+    toolchain = ":{platform}_impl",
+    toolchain_type = "@tools_codex//codex:toolchain_type",
+)
+
+toolchain(
+    name = "{platform}_runtime",
     target_compatible_with = [
         {exec_constraints},
     ],
     toolchain = ":{platform}_impl",
-    toolchain_type = "@tools_codex//codex:toolchain_type",
+    toolchain_type = "@tools_codex//codex:runtime_toolchain_type",
 )
 """
 

@@ -33,3 +33,4 @@ codex_toolchain = rule(
 )
 
 CODEX_TOOLCHAIN_TYPE = "@tools_codex//codex:toolchain_type"
+CODEX_RUNTIME_TOOLCHAIN_TYPE = "@tools_codex//codex:runtime_toolchain_type"
