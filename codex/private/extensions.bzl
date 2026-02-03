@@ -77,23 +77,32 @@ _codex_toolchains_repo = repository_rule(
     implementation = _codex_toolchains_repo_impl,
 )
 
+def _find_modules(module_ctx):
+    """Find the root module and tools_codex module.
+
+    Toolchain configuration is only allowed in the root module, or in
+    tools_codex.
+    See https://github.com/bazelbuild/bazel/discussions/22024 for discussion.
+    """
+    root = None
+    tools_codex = None
+    for mod in module_ctx.modules:
+        if mod.is_root:
+            root = mod
+        if mod.name == "tools_codex":
+            tools_codex = mod
+    if root == None:
+        root = tools_codex
+    if tools_codex == None:
+        fail("Unable to find tools_codex module")
+    return root, tools_codex
+
 def _codex_impl(module_ctx):
     """Implementation of the codex module extension."""
+    root, tools_codex = _find_modules(module_ctx)
 
-    # Check for mismatched versions
-    root_download = None
-    versions = {}  # version -> download tag
-    for mod in module_ctx.modules:
-        for download in mod.tags.download:
-            if mod.is_root and not root_download:
-                root_download = download
-            if download.version and download.version not in versions:
-                versions[download.version] = download
-    if len(versions) > 1:
-        fail("Conflicting Codex CLI versions requested: {}".format(", ".join(versions.keys())))
-
-    # Use specified version if any, otherwise use root module settings
-    download = versions.values()[0] if versions else root_download
+    downloads = root.tags.download or tools_codex.tags.download
+    download = downloads[0] if downloads else None
     version = download.version if download else ""
     sha256 = download.sha256 if download else {}
     use_latest = download.use_latest if download else False
